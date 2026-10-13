@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — Lumora Salon{% endblock %}
+{% block nav %}{% include "partials/topnav.html" %}{% endblock %}
+{% block body %}
+<div class="error-shell">
+  <div>
+    <div class="error-code">{{ code }}</div>
+    <h2>{{ message }}</h2>
+    <p>Let's get you back to somewhere familiar.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Return home</a>
+  </div>
+</div>
+{% endblock %}

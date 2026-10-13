@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}My Schedule — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'mine' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Stylist Dashboard</span>
+        <h2>Hi {{ user.name.split(' ')[0] }}, here's your schedule.</h2>
+        <p>{{ user.specialty }} · Manage today's chair time and upcoming bookings.</p>
+      </div>
+      <form method="POST" action="{{ url_for('toggle_availability') }}" class="card" style="margin:0; padding:14px 18px; display:flex; align-items:center; gap:12px;">{{ csrf_field() }}
+        <span style="font-size:0.85rem; font-weight:700;">Accepting bookings</span>
+        <label class="switch">
+          <input type="checkbox" onchange="this.form.submit()" {{ 'checked' if user.available }}>
+          <span class="slider"></span>
+        </label>
+      </form>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-tile accent"><div class="num"><span data-count="{{ today_appts|length }}">0</span></div><div class="label">Today's appointments</div></div>
+      <div class="stat-tile"><div class="num"><span data-count="{{ upcoming|length }}">0</span></div><div class="label">Upcoming</div></div>
+      <div class="stat-tile"><div class="num"><span data-count="{{ past|selectattr('status','equalto','Completed')|list|length }}">0</span></div><div class="label">Completed</div></div>
+      <div class="stat-tile"><div class="num">{{ "Open" if user.available else "Closed" }}</div><div class="label">Booking status</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Today</h3></div>
+      {% if today_appts|length == 0 %}
+        <div class="empty-state"><p>No appointments scheduled for today. Enjoy the breather.</p></div>
+      {% else %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Time</th><th>Client</th><th>Service</th><th>Status</th><th>Update</th></tr></thead>
+            <tbody>
+              {% for a in today_appts %}
+              <tr>
+                <td class="cell-name">{{ a.time }}</td>
+                <td>{{ a.customer_name }}</td>
+                <td>{{ a.service_name }}<div class="cell-sub">{{ a.duration }} min</div></td>
+                <td><span class="pill pill-{{ a.status|lower }}">{{ a.status }}</span></td>
+                <td>
+                  <form method="POST" action="{{ url_for('update_appointment_status', appt_id=a.id) }}" class="row-actions">{{ csrf_field() }}
+                    <select name="status" onchange="this.form.submit()" style="padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:0.82rem;">
+                      {% for st in ['Pending','Confirmed','Completed','Cancelled'] %}
+                        <option value="{{ st }}" {{ 'selected' if a.status == st }}>{{ st }}</option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Upcoming</h3></div>
+      {% if upcoming|length == 0 %}
+        <div class="empty-state"><p>Nothing on the books beyond today yet.</p></div>
+      {% else %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date &amp; Time</th><th>Client</th><th>Service</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for a in upcoming %}
+              <tr>
+                <td class="cell-name">{{ a.date }} · {{ a.time }}</td>
+                <td>{{ a.customer_name }}</td>
+                <td>{{ a.service_name }}</td>
+                <td><span class="pill pill-{{ a.status|lower }}">{{ a.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>History</h3></div>
+      {% if past|length == 0 %}
+        <div class="empty-state"><p>Completed and past appointments will appear here.</p></div>
+      {% else %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date &amp; Time</th><th>Client</th><th>Service</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for a in past %}
+              <tr>
+                <td>{{ a.date }} · {{ a.time }}</td>
+                <td>{{ a.customer_name }}</td>
+                <td>{{ a.service_name }}</td>
+                <td><span class="pill pill-{{ a.status|lower }}">{{ a.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

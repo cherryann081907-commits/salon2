@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit booking' if appt else 'New booking' }} — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'appointments' %}
+{% set v = form if form else {} %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Appointments</span>
+        <h2>{{ 'Edit booking' if appt else 'Create a booking' }}</h2>
+        <p>{{ 'Change anything about this booking — the time list shows what is free for the chosen stylist, including this booking’s own slot.' if appt else 'Book on behalf of a client. Booked and unavailable times are locked automatically.' }}</p>
+      </div>
+      <a href="{{ url_for('admin_appointments') }}" class="btn btn-ghost">← Back</a>
+    </div>
+
+    {% set sel_customer = (v.get('customer_id') or (appt.customer_id if appt else ''))|string %}
+    {% set sel_stylist = (v.get('stylist_id') or (appt.stylist_id if appt else ''))|string %}
+    {% set sel_service = (v.get('service_id') or (appt.service_id if appt else ''))|string %}
+    {% set sel_date = v.get('date') or (appt.date if appt else '') %}
+    {% set sel_time = v.get('time') or (appt.time if appt else '') %}
+    {% set sel_status = v.get('status') or (appt.status if appt else 'Confirmed') %}
+    {% set sel_notes = v.get('notes') if v.get('notes') is not none else (appt.notes if appt else '') %}
+
+    <div class="card">
+      <form method="POST" novalidate data-slot-picker {% if appt %}data-exclude="{{ appt.id }}"{% endif %}>{{ csrf_field() }}
+        <div class="field-row">
+          <div class="field">
+            <label for="customer_id">Client</label>
+            <div class="select-3d"><select id="customer_id" name="customer_id" required>
+              <option value="">Choose a client…</option>
+              {% for c in customers %}<option value="{{ c.id }}" {{ 'selected' if sel_customer == c.id|string }}>{{ c.name }} — {{ c.email }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="field">
+            <label for="service_id">Service</label>
+            <div class="select-3d"><select id="service_id" name="service_id" required>
+              <option value="">Choose a service…</option>
+              {% for s in services %}<option value="{{ s.id }}" {{ 'selected' if sel_service == s.id|string }}>{{ s.name }} — {{ s.duration }} min · ${{ "%.0f"|format(s.price) }}</option>{% endfor %}
+            </select></div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="stylist_id">Stylist</label>
+            <div class="select-3d"><select id="stylist_id" name="stylist_id" required>
+              <option value="">Choose a stylist…</option>
+              {% for s in stylists %}<option value="{{ s.id }}" {{ 'selected' if sel_stylist == s.id|string }}>{{ s.name }} — {{ s.specialty }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="field">
+            <label for="date">Date</label>
+            <input type="date" id="date" name="date" value="{{ sel_date }}" {% if not appt %}min="{{ today }}"{% endif %} max="{{ max_day }}" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="time">Time selection</label>
+          <div class="select-3d"><select id="time" name="time" required data-slot-select data-initial="{{ sel_time }}" disabled>
+            <option value="">Choose service, stylist &amp; date first</option>
+          </select></div>
+          <div class="slot-panel">
+            <div class="slot-legend">
+              <span><i class="lg-available"></i>Available</span><span><i class="lg-booked"></i>Booked</span>
+              <span><i class="lg-blocked"></i>Unavailable</span><span><i class="lg-selected"></i>Selected</span>
+            </div>
+            <div class="slot-grid" data-slot-grid aria-live="polite"></div>
+            <div class="slot-status" data-slot-status></div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="status">Status</label>
+            <div class="select-3d"><select id="status" name="status">
+              {% for st in statuses %}<option value="{{ st }}" {{ 'selected' if sel_status == st }}>{{ st }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="field">
+            <label for="notes">Notes</label>
+            <input type="text" id="notes" name="notes" maxlength="300" value="{{ sel_notes }}" placeholder="Optional notes">
+          </div>
+        </div>
+
+        <div class="head-actions">
+          <button type="submit" class="btn btn-primary">{{ 'Save changes' if appt else 'Create booking' }}</button>
+          <a href="{{ url_for('admin_appointments') }}" class="btn btn-ghost">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}

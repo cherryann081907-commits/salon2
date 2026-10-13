@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Lumora Salon — Modern Beauty & Hair Studio{% endblock %}
+{% block nav %}{% include "partials/topnav.html" %}{% endblock %}
+
+{% block body %}
+<header class="container hero">
+  <div>
+    <span class="hero-eyebrow">Lumora Studio</span>
+    <h1>Where every visit feels like your best-kept secret.</h1>
+    <p class="lead">Book precision cuts, dimensional color, and occasion styling with a team that treats your time — and your hair — with equal care.</p>
+    <div class="hero-actions">
+      {% if current_user %}
+        <a href="{{ url_for(current_user.dashboard_endpoint()) }}" class="btn btn-primary">Go to my dashboard</a>
+      {% else %}
+        <a href="{{ url_for('register') }}" class="btn btn-primary">Book an appointment</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline">Staff &amp; client login</a>
+      {% endif %}
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num"><span data-count="{{ stylists|length }}">0</span></div><div class="label">Expert stylists</div></div>
+      <div class="hero-stat"><div class="num"><span data-count="{{ services|length }}">0</span>+</div><div class="label">Signature services</div></div>
+      <div class="hero-stat"><div class="num">4.9</div><div class="label">Average rating</div></div>
+    </div>
+  </div>
+
+  <div class="hero-art">
+    <div class="scene" aria-hidden="true">
+      <div class="scene-stage">
+        <div class="scene-floor"></div>
+        <div class="s-card s-back"></div>
+        <div class="ring"></div>
+        <div class="s-card s-main">
+          <small>Today · Maya Chen</small>
+          <h4>Balayage Color</h4>
+          <div class="s-slots">
+            <div class="slot is-available">9:00 AM<small>Available</small></div>
+            <div class="slot is-booked">9:30 AM<small>Booked</small></div>
+            <div class="slot is-booked">10:00 AM<small>Booked</small></div>
+            <div class="slot is-selected">10:30 AM<small>Yours</small></div>
+            <div class="slot is-available">11:00 AM<small>Available</small></div>
+            <div class="slot is-blocked">11:30 AM<small>Break</small></div>
+          </div>
+        </div>
+        <div class="s-card s-dark"><b>Booked<br>in seconds</b><span>Live availability. No double bookings.</span></div>
+        <div class="orb o1"></div><div class="orb o2"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="services">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>Signature services</h2>
+        <p>Every treatment is priced clearly and timed accurately, so there are never any surprises at the chair.</p>
+      </div>
+      {% if current_user and current_user.role == 'customer' %}
+        <a href="{{ url_for('customer_dashboard') }}" class="btn btn-outline">Book a service</a>
+      {% endif %}
+    </div>
+    <div class="svc-grid">
+      {% for s in services %}
+        <div class="svc-card">
+          <svg class="svc-icon" viewBox="0 0 24 24" fill="none">
+            {% if s.category == 'Hair' %}
+              <path d="M4 4c4 0 4 16 8 16s4-16 8-16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            {% elif s.category == 'Color' %}
+              <path d="M12 3c4 4 7 8 7 12a7 7 0 11-14 0c0-4 3-8 7-12z" stroke="currentColor" stroke-width="1.6"/>
+            {% elif s.category == 'Nails' %}
+              <path d="M12 3c3 3 5 7 5 11a5 5 0 01-10 0c0-4 2-8 5-11z" stroke="currentColor" stroke-width="1.6"/>
+            {% else %}
+              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c1.5-4.5 5-6 7-6s5.5 1.5 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            {% endif %}
+          </svg>
+          <h3>{{ s.name }}</h3>
+          <p>{{ s.description }}</p>
+          <div class="svc-meta">
+            <span class="svc-price">${{ "%.0f"|format(s.price) }}</span>
+            <span class="svc-duration">{{ s.duration }} min</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section band-deep" id="stylists">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>Meet the team</h2>
+        <p>Every stylist at Lumora brings their own point of view — pick the one whose work feels like you.</p>
+      </div>
+    </div>
+    <div class="stylist-grid">
+      {% for st in stylists %}
+        <div class="stylist-card">
+          <div class="stylist-portrait">
+            <svg viewBox="0 0 300 225" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="bg{{ loop.index }}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{{ ['#F6EBD3','#F6DDE1','#DDE7DB'][loop.index0 % 3] }}"/><stop offset="1" stop-color="{{ ['#E3CFA3','#D9A9B1','#A9BFA7'][loop.index0 % 3] }}"/></linearGradient>
+                <radialGradient id="hd{{ loop.index }}" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#3E5446"/><stop offset="1" stop-color="#0E1612"/></radialGradient>
+              </defs>
+              <rect width="300" height="225" fill="url(#bg{{ loop.index }})"/>
+              <ellipse cx="150" cy="214" rx="96" ry="10" fill="#000" opacity=".18"/>
+              <path d="M82 225c8-46 36-68 68-68s60 22 68 68z" fill="url(#hd{{ loop.index }})"/>
+              <circle cx="150" cy="92" r="44" fill="url(#hd{{ loop.index }})"/>
+              <ellipse cx="136" cy="76" rx="14" ry="9" fill="#fff" opacity=".18"/>
+            </svg>
+          </div>
+          <div class="stylist-name">{{ st.name }}</div>
+          <div class="stylist-role">{{ st.specialty }}</div>
+          <p>{{ st.bio }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="container section" id="about">
+  <div class="cta-band">
+    <div>
+      <h2>Ready for your next appointment?</h2>
+      <p>Create a free client account to book instantly and track your visit history.</p>
+    </div>
+    {% if current_user %}
+      <a href="{{ url_for(current_user.dashboard_endpoint()) }}" class="btn btn-gold">Go to dashboard</a>
+    {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-gold">Create my account</a>
+    {% endif %}
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>&copy; {{ current_year }} Lumora Salon. Crafted with care.</p>
+    <p>123 Bloom Street · Open Tue–Sun, 9am–7pm</p>
+  </div>
+</footer>
+{% endblock %}

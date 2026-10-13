@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Stylists — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'stylists' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Team</span>
+        <h2>Manage stylists</h2>
+        <p>Add new team members and give them their own login to manage their schedule.</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleCollapse('add-stylist-form')">+ Add stylist</button>
+    </div>
+
+    <div class="card collapsible" id="add-stylist-form">
+      <div class="card-head"><h3>New stylist</h3></div>
+      <form method="POST" action="{{ url_for('admin_stylists') }}" novalidate>{{ csrf_field() }}
+        <div class="field-row">
+          <div class="field">
+            <label for="name">Full name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Maya Chen" required>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="stylist@lumora.com" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" placeholder="555-0100">
+          </div>
+          <div class="field">
+            <label for="specialty">Specialty</label>
+            <input type="text" id="specialty" name="specialty" placeholder="e.g. Color Specialist">
+          </div>
+        </div>
+        <div class="field">
+          <label for="bio">Short bio</label>
+          <textarea id="bio" name="bio" placeholder="A sentence or two clients will see on the site"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="work_start">Works from</label><input type="time" id="work_start" name="work_start" value="{{ SALON_OPEN }}" step="1800"></div>
+          <div class="field"><label for="work_end">Until</label><input type="time" id="work_end" name="work_end" value="{{ SALON_CLOSE }}" step="1800"></div>
+        </div>
+        <div class="field">
+          <label>Working days</label>
+          <div class="day-picks">{% for d in DAY_NAMES %}<label><input type="checkbox" name="work_days" value="{{ loop.index0 }}" {{ 'checked' if loop.index0 != 0 }}><span>{{ d }}</span></label>{% endfor %}</div>
+        </div>
+        <div class="field">
+          <label for="password">Temporary password</label>
+          <input type="text" id="password" name="password" placeholder="stylist123" value="stylist123" autocomplete="off">
+          <p class="field-hint">8+ characters with a letter and a number. The stylist can change it after logging in.</p>
+        </div>
+        <button type="submit" class="btn btn-primary">Add to team</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="stySearch" placeholder="Search stylists…" onkeyup="filterTable('stySearch','styTable')">
+      </div>
+      {% if stylists|length == 0 %}
+        <div class="empty-state"><p>No stylists yet — add your first team member above.</p></div>
+      {% else %}
+      <div class="table-wrap">
+        <table id="styTable">
+          <thead><tr><th>Stylist</th><th>Specialty</th><th>Contact</th><th>Hours</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for st in stylists %}
+            <tr>
+              <td class="cell-name">{{ st.name }}</td>
+              <td>{{ st.specialty }}</td>
+              <td>{{ st.email }}<div class="cell-sub">{{ st.phone }}</div></td>
+              <td>{{ st.work_start|t12 }} – {{ st.work_end|t12 }}<div class="cell-sub">{{ st.work_days_label }}</div></td>
+              <td>{% if not st.active %}<span class="pill pill-neutral">Deactivated</span>{% else %}<span class="pill {{ 'pill-available' if st.available else 'pill-cancelled' }}">{{ 'Accepting' if st.available else 'Paused' }}</span>{% endif %}</td>
+              <td class="row-actions">
+                <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="sty-dialog" data-action="{{ url_for('admin_edit_stylist', stylist_id=st.id) }}" data-json='{{ st.to_dict()|tojson|forceescape }}'>Edit</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="reset-dialog" data-action="{{ url_for('admin_reset_password', user_id=st.id) }}" data-name="{{ st.name }}">Reset password</button>
+                <form method="POST" action="{{ url_for('admin_delete_stylist', stylist_id=st.id) }}" onsubmit="return confirm('Remove this stylist and all of their bookings and time off? This cannot be undone.');">{{ csrf_field() }}
+                  <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+<dialog class="modal" id="sty-dialog">
+  <form method="POST" action="" class="modal-body" novalidate>{{ csrf_field() }}
+    <h3>Edit stylist</h3>
+    <div class="field-row">
+      <div class="field"><label>Full name</label><input type="text" name="name" required maxlength="60"></div>
+      <div class="field"><label>Email</label><input type="email" name="email" required></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Phone</label><input type="tel" name="phone"></div>
+      <div class="field"><label>Specialty</label><input type="text" name="specialty" maxlength="50"></div>
+    </div>
+    <div class="field"><label>Short bio</label><textarea name="bio" maxlength="200"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Works from</label><input type="time" name="work_start" step="1800"></div>
+      <div class="field"><label>Until</label><input type="time" name="work_end" step="1800"></div>
+    </div>
+    <div class="field"><label>Working days</label>
+      <div class="day-picks">{% for d in DAY_NAMES %}<label><input type="checkbox" name="work_days" value="{{ loop.index0 }}"><span>{{ d }}</span></label>{% endfor %}</div>
+    </div>
+    <label class="check-row"><input type="checkbox" name="available"> Accepting new bookings</label>
+    <label class="check-row"><input type="checkbox" name="active"> Account active (can log in)</label>
+    <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button type="submit" class="btn btn-primary">Save changes</button></div>
+  </form>
+</dialog>
+{% include "partials/reset_dialog.html" %}
+{% endblock %}

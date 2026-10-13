@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Clients — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'customers' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Clients</span>
+        <h2>Client directory</h2>
+        <p>Add, edit, or remove clients, and reset their password when they get locked out.</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleCollapse('add-client-form')">+ Add client</button>
+    </div>
+
+    <div class="card collapsible" id="add-client-form">
+      <div class="card-head"><h3>New client</h3></div>
+      <form method="POST" action="{{ url_for('admin_customers') }}" novalidate autocomplete="off">{{ csrf_field() }}
+        <div class="field-row">
+          <div class="field"><label for="c_name">Full name</label><input type="text" id="c_name" name="name" required maxlength="60"></div>
+          <div class="field"><label for="c_email">Email</label><input type="email" id="c_email" name="email" required></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="c_phone">Phone</label><input type="tel" id="c_phone" name="phone"></div>
+          <div class="field"><label for="c_pw">Temporary password</label><input type="text" id="c_pw" name="password" value="client123"><p class="field-hint">8+ characters with a letter and a number.</p></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Add client</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="custSearch" placeholder="Search clients…" onkeyup="filterTable('custSearch','custTable')">
+      </div>
+      {% if customers|length == 0 %}
+        <div class="empty-state"><p>No clients have registered yet.</p></div>
+      {% else %}
+      <div class="table-wrap">
+        <table id="custTable">
+          <thead><tr><th>Client</th><th>Contact</th><th>Total visits</th><th>Completed</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for c in customers %}
+            <tr>
+              <td class="cell-name">{{ c.obj.name }}</td>
+              <td>{{ c.obj.email }}<div class="cell-sub">{{ c.obj.phone }}</div></td>
+              <td>{{ c.total_visits }}</td>
+              <td>{{ c.completed }}</td>
+              <td><span class="pill {{ 'pill-available' if c.obj.active else 'pill-neutral' }}">{{ 'Active' if c.obj.active else 'Deactivated' }}</span></td>
+              <td class="row-actions">
+                <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="cust-dialog" data-action="{{ url_for('admin_edit_customer', customer_id=c.obj.id) }}" data-json='{{ c.obj.to_dict()|tojson|forceescape }}'>Edit</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="reset-dialog" data-action="{{ url_for('admin_reset_password', user_id=c.obj.id) }}" data-name="{{ c.obj.name }}">Reset password</button>
+                <form method="POST" action="{{ url_for('admin_delete_customer', customer_id=c.obj.id) }}" onsubmit="return confirm('Remove this client and all of their bookings? This cannot be undone.');">{{ csrf_field() }}
+                  <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+<dialog class="modal" id="cust-dialog">
+  <form method="POST" action="" class="modal-body" novalidate>{{ csrf_field() }}
+    <h3>Edit client</h3>
+    <div class="field"><label>Full name</label><input type="text" name="name" required maxlength="60"></div>
+    <div class="field-row">
+      <div class="field"><label>Email</label><input type="email" name="email" required></div>
+      <div class="field"><label>Phone</label><input type="tel" name="phone"></div>
+    </div>
+    <label class="check-row"><input type="checkbox" name="active"> Account active (can log in)</label>
+    <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button type="submit" class="btn btn-primary">Save changes</button></div>
+  </form>
+</dialog>
+{% include "partials/reset_dialog.html" %}
+{% endblock %}

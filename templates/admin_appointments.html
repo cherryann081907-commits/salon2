@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Appointments — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'appointments' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Appointments</span>
+        <h2>All bookings</h2>
+        <p>Add, edit, confirm, or remove appointments across every stylist. Slots free up the moment a booking is cancelled or deleted.</p>
+      </div>
+      <div class="head-actions">
+        <a href="{{ url_for('schedule') }}" class="btn btn-ghost">Live schedule</a>
+        <a href="{{ url_for('admin_appointment_new') }}" class="btn btn-gold">+ New booking</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="apptSearch" placeholder="Search by client, stylist, or service…" onkeyup="filterTable('apptSearch','apptTable')">
+        <select id="statusFilter" onchange="filterByStatus()">
+          <option value="">All statuses</option>
+          {% for st in statuses %}<option value="{{ st }}">{{ st }}</option>{% endfor %}
+        </select>
+      </div>
+
+      {% if appts|length == 0 %}
+        <div class="empty-state"><p>No appointments have been booked yet.</p></div>
+      {% else %}
+      <div class="table-wrap">
+        <table id="apptTable">
+          <thead><tr><th>Client</th><th>Stylist</th><th>Service</th><th>Date &amp; Time</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for a in appts %}
+            <tr data-status="{{ a.status }}">
+              <td class="cell-name">{{ a.customer_name }}</td>
+              <td>{{ a.stylist_name }}</td>
+              <td>{{ a.service_name }}<div class="cell-sub">${{ "%.0f"|format(a.service_price) }} · {{ a.duration }} min</div></td>
+              <td>{{ a.date|dlabel }}<div class="cell-sub">{{ a.time|t12 }} – {{ a.end|t12 }}</div></td>
+              <td>
+                <form method="POST" action="{{ url_for('admin_update_status', appt_id=a.id) }}">{{ csrf_field() }}
+                  <div class="select-3d" style="min-width:128px;"><select name="status" onchange="this.form.submit()" style="padding:8px 34px 8px 12px; font-size:.8rem;">
+                    {% for st in statuses %}
+                      <option value="{{ st }}" {{ 'selected' if a.status == st }}>{{ st }}</option>
+                    {% endfor %}
+                  </select></div>
+                </form>
+              </td>
+              <td class="row-actions">
+                <a href="{{ url_for('admin_appointment_edit', appt_id=a.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+                <form method="POST" action="{{ url_for('admin_delete_appointment', appt_id=a.id) }}" onsubmit="return confirm('Delete this appointment permanently?');">{{ csrf_field() }}
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function filterByStatus() {
+    const val = document.getElementById('statusFilter').value;
+    document.querySelectorAll('#apptTable tbody tr').forEach(row => {
+      row.style.display = (!val || row.dataset.status === val) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

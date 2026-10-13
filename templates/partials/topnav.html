@@ -1,0 +1,30 @@
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a href="{{ url_for('index') }}" class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="19" stroke="#AD8A4E" stroke-width="1.4"/>
+        <path d="M13 12L27 28M27 12L13 28" stroke="#16211C" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="13" cy="12" r="2.4" stroke="#AD8A4E" stroke-width="1.3"/>
+        <circle cx="13" cy="28" r="2.4" stroke="#AD8A4E" stroke-width="1.3"/>
+      </svg>
+      Lumora
+    </a>
+    <div class="nav-links">
+      <a href="{{ url_for('index') }}#services">Services</a>
+      <a href="{{ url_for('index') }}#stylists">Stylists</a>
+      <a href="{{ url_for('index') }}#about">About</a>
+    </div>
+    <div class="nav-actions">
+      {% if current_user %}
+        <a href="{{ url_for(current_user.dashboard_endpoint()) }}" class="user-pill">
+          <span class="user-avatar">{{ current_user.name[0] }}</span>
+          {{ current_user.name.split(' ')[0] }}
+        </a>
+        <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Log in</a>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Book now</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Accounts — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'accounts' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Accounts &amp; passwords</span>
+        <h2>All accounts</h2>
+        <p>Full control over every login — reset passwords for stylists and clients, create accounts, or deactivate access.</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleCollapse('add-account-form')">+ New account</button>
+    </div>
+
+    <div class="card collapsible" id="add-account-form">
+      <div class="card-head"><h3>Create account</h3></div>
+      <form method="POST" action="{{ url_for('admin_account_new') }}" novalidate autocomplete="off">{{ csrf_field() }}
+        <div class="field-row">
+          <div class="field"><label for="a_role">Role</label><div class="select-3d"><select id="a_role" name="role"><option value="customer">Client</option><option value="stylist">Stylist</option><option value="admin">Administrator</option></select></div></div>
+          <div class="field"><label for="a_name">Full name</label><input type="text" id="a_name" name="name" required maxlength="60"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="a_email">Email</label><input type="email" id="a_email" name="email" required></div>
+          <div class="field"><label for="a_phone">Phone</label><input type="tel" id="a_phone" name="phone"></div>
+        </div>
+        <div class="field">
+          <label for="a_pw">Password</label>
+          <div class="pw-wrap"><input type="password" id="a_pw" name="password" required minlength="8" data-meter="a_meter" autocomplete="new-password"><button type="button" class="pw-toggle">Show</button></div>
+          <div class="pw-meter" id="a_meter"><span></span></div><div class="pw-hint"></div>
+        </div>
+        <div class="head-actions">
+          <button type="submit" class="btn btn-primary">Create account</button>
+          <button type="button" class="btn btn-ghost" data-generate-for="a_pw">Generate password</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar"><input type="text" id="accSearch" placeholder="Search accounts…" onkeyup="filterTable('accSearch','accTable')"></div>
+      <div class="table-wrap">
+        <table id="accTable">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+          {% for u in accounts %}
+            <tr>
+              <td class="cell-name">{{ u.name }}{% if u.id == current_user.id %} <span class="cell-sub">(you)</span>{% endif %}</td>
+              <td>{{ u.email }}<div class="cell-sub">{{ u.phone }}</div></td>
+              <td><span class="pill {{ 'pill-admin' if u.role == 'admin' else 'pill-neutral' }}">{{ u.role_label }}</span></td>
+              <td><span class="pill {{ 'pill-available' if u.active else 'pill-cancelled' }}">{{ 'Active' if u.active else 'Deactivated' }}</span></td>
+              <td class="row-actions">
+                {% if u.id == current_user.id %}
+                  <a class="btn btn-ghost btn-sm" href="{{ url_for('account') }}">Change my password</a>
+                {% else %}
+                  <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="reset-dialog" data-action="{{ url_for('admin_reset_password', user_id=u.id) }}" data-name="{{ u.name }}">Reset password</button>
+                  <form method="POST" action="{{ url_for('admin_toggle_active', user_id=u.id) }}">{{ csrf_field() }}<input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" class="btn {{ 'btn-danger' if u.active else 'btn-ghost' }} btn-sm">{{ 'Deactivate' if u.active else 'Activate' }}</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+{% include "partials/reset_dialog.html" %}
+{% endblock %}

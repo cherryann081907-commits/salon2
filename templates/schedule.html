@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Schedule — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'schedule' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Schedule</span>
+        <h2>{{ 'Live schedule board' if current_user.role == 'admin' else 'My schedule' }}</h2>
+        <p>Every slot shows as <b>Available</b> or <b>Booked</b> and updates automatically. {{ 'Click a booked slot to edit it.' if current_user.role == 'admin' else '' }}</p>
+      </div>
+      <button class="btn btn-gold" data-open-dialog="off-dialog" data-action="{{ url_for('timeoff_save') }}" data-json='{{ {"id": "", "date": day if day >= today else today, "start": "12:00", "end": "13:00", "all_day": false, "reason": ""}|tojson|forceescape }}'>+ Block time off</button>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="date-nav">
+          <button class="btn btn-ghost btn-icon" data-day-shift="-1" aria-label="Previous day">‹</button>
+          <input type="date" id="board-date" value="{{ day }}">
+          <button class="btn btn-ghost btn-icon" data-day-shift="1" aria-label="Next day">›</button>
+          <button class="btn btn-ghost btn-sm" data-day-today="{{ today }}">Today</button>
+        </div>
+        <div class="slot-status" id="board-status"></div>
+      </div>
+      <div class="slot-legend">
+        <span><i class="lg-available"></i>Available</span><span><i class="lg-booked"></i>Booked</span><span><i class="lg-blocked"></i>Unavailable / time off</span>
+      </div>
+      <div class="board-wrap" id="board"><div class="empty-state"><p>Loading schedule…</p></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Upcoming time off</h3></div>
+      {% if timeoffs|length == 0 %}
+        <div class="empty-state"><p>No time off scheduled. Block time for breaks, training, or days off.</p></div>
+      {% else %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Stylist</th><th>Date</th><th>Time</th><th>Reason</th><th></th></tr></thead>
+          <tbody>
+          {% for row in timeoffs %}{% set t = row.obj %}
+            <tr>
+              <td class="cell-name">{{ row.stylist.name if row.stylist else 'Unknown' }}</td>
+              <td>{{ t.date|dlabel }}</td>
+              <td>{{ 'All day' if t.all_day else (t.start|t12 ~ ' – ' ~ t.end|t12) }}</td>
+              <td>{{ t.reason or '—' }}</td>
+              <td class="row-actions">
+                <button class="btn btn-ghost btn-sm" data-open-dialog="off-dialog" data-action="{{ url_for('timeoff_save') }}"
+                  data-json='{{ {"id": t.id, "stylist_id": t.stylist_id, "date": t.date, "start": t.start if not t.all_day else "12:00", "end": t.end if not t.all_day else "13:00", "all_day": t.all_day, "reason": t.reason}|tojson|forceescape }}'>Edit</button>
+                <form method="POST" action="{{ url_for('timeoff_delete', off_id=t.id) }}" onsubmit="return confirm('Remove this time off?');">{{ csrf_field() }}
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+<dialog class="modal" id="off-dialog">
+  <form method="POST" action="" class="modal-body" novalidate>
+    {{ csrf_field() }}
+    <input type="hidden" name="id" value="">
+    <h3>Block time off</h3>
+    <p>Blocked slots become unavailable to clients immediately.</p>
+    {% if current_user.role == 'admin' %}
+    <div class="field"><label for="off_stylist">Stylist</label>
+      <div class="select-3d"><select id="off_stylist" name="stylist_id" required>
+        {% for s in stylist_list %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+      </select></div></div>
+    {% endif %}
+    <div class="field"><label for="off_date">Date</label><input type="date" id="off_date" name="date" min="{{ today }}" required></div>
+    <label class="check-row"><input type="checkbox" name="all_day"> All day</label>
+    <div class="field-row">
+      <div class="field"><label for="off_start">From</label><input type="time" id="off_start" name="start" step="1800" data-time-field></div>
+      <div class="field"><label for="off_end">Until</label><input type="time" id="off_end" name="end" step="1800" data-time-field></div>
+    </div>
+    <div class="field"><label for="off_reason">Reason (optional)</label><input type="text" id="off_reason" name="reason" maxlength="80" placeholder="Lunch, training, day off…"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}

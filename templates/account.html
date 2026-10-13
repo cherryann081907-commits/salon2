@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Account — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'account' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">{{ current_user.role_label }} account</span>
+        <h2>My account</h2>
+        <p>Update your details and keep your password fresh and secure.</p>
+      </div>
+      <span class="pill pill-neutral">{{ current_user.role_label }}</span>
+    </div>
+
+    <div class="booking-grid">
+      <div class="card">
+        <div class="card-head"><h3>Profile</h3></div>
+        <form method="POST" action="{{ url_for('account_profile') }}" novalidate>{{ csrf_field() }}
+          <div class="field"><label for="name">Full name</label><input type="text" id="name" name="name" value="{{ current_user.name }}" required maxlength="60"></div>
+          <div class="field"><label for="email">Email address</label><input type="email" id="email" name="email" value="{{ current_user.email }}" required></div>
+          <div class="field"><label for="phone">Phone</label><input type="tel" id="phone" name="phone" value="{{ current_user.phone }}"></div>
+          <button type="submit" class="btn btn-primary">Save profile</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Change password</h3></div>
+        <form method="POST" action="{{ url_for('account_password') }}" novalidate data-pw-form autocomplete="off">{{ csrf_field() }}
+          <div class="field">
+            <label for="current_password">Current password</label>
+            <div class="pw-wrap"><input type="password" id="current_password" name="current_password" required autocomplete="current-password"><button type="button" class="pw-toggle">Show</button></div>
+          </div>
+          <div class="field">
+            <label for="new_password">New password</label>
+            <div class="pw-wrap"><input type="password" id="new_password" name="new_password" required minlength="8" data-meter="acct_meter" autocomplete="new-password"><button type="button" class="pw-toggle">Show</button></div>
+            <div class="pw-meter" id="acct_meter"><span></span></div><div class="pw-hint"></div>
+          </div>
+          <div class="field">
+            <label for="confirm_password">Confirm new password</label>
+            <div class="pw-wrap"><input type="password" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password"><button type="button" class="pw-toggle">Show</button></div>
+          </div>
+          <p class="field-hint" style="margin-bottom:14px;">At least 8 characters, with a letter and a number.</p>
+          <button type="submit" class="btn btn-gold">Update password</button>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

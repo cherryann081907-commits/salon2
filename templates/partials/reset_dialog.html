@@ -1,0 +1,21 @@
+<dialog class="modal" id="reset-dialog">
+  <form method="POST" action="" class="modal-body" data-pw-form autocomplete="off">
+    {{ csrf_field() }}
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <h3>Reset password</h3>
+    <p>Set a new password for <strong data-fill="name"></strong>. They can change it again after logging in.</p>
+    <div class="field">
+      <label for="reset_pw">New password</label>
+      <div class="pw-wrap">
+        <input type="password" id="reset_pw" name="new_password" required minlength="8" data-meter="reset_meter" autocomplete="new-password">
+        <button type="button" class="pw-toggle">Show</button>
+      </div>
+      <div class="pw-meter" id="reset_meter"><span></span></div><div class="pw-hint"></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost btn-sm" data-generate-for="reset_pw">Generate</button>
+      <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+      <button type="submit" class="btn btn-gold">Reset password</button>
+    </div>
+  </form>
+</dialog>

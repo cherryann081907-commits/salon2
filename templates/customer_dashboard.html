@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'mine' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Client Dashboard</span>
+        <h2>Hi {{ current_user.name.split(' ')[0] }}, ready for your next appointment?</h2>
+        <p>Book a new visit or manage your upcoming and past appointments below.</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="book">Book Appointment</button>
+      <button class="tab-btn" data-tab="upcoming">Upcoming ({{ upcoming|length }})</button>
+      <button class="tab-btn" data-tab="history">History ({{ history|length }})</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-book">
+      <div class="card">
+        <div class="card-head"><h3>Request a new appointment</h3></div>
+
+        {% if stylists|length == 0 or services|length == 0 %}
+          <div class="empty-state">
+            <p>Booking is temporarily unavailable — please check back soon.</p>
+          </div>
+        {% else %}
+        <form method="POST" action="{{ url_for('book_appointment') }}" id="booking-form" novalidate data-slot-picker data-ajax>{{ csrf_field() }}
+          <div class="booking-grid">
+            <div>
+              <div class="field">
+                <label for="service_id">1 · Service</label>
+                <div class="select-3d"><select id="service_id" name="service_id" required>
+                  <option value="">Choose a service…</option>
+                  {% for s in services %}
+                    <option value="{{ s.id }}">{{ s.name }} — ${{ "%.0f"|format(s.price) }} ({{ s.duration }} min)</option>
+                  {% endfor %}
+                </select></div>
+              </div>
+
+              <span class="label">2 · Stylist</span>
+              <div class="stylist-pick">
+                {% for st in stylists %}
+                  <label class="stylist-option">
+                    <input type="radio" name="stylist_id" value="{{ st.id }}" required>
+                    <div class="name">{{ st.name }}</div>
+                    <div class="spec">{{ st.specialty }}</div>
+                  </label>
+                {% endfor %}
+              </div>
+
+              <div class="field">
+                <label for="date">3 · Date</label>
+                <input type="date" id="date" name="date" min="{{ today }}" max="{{ max_day }}" required>
+              </div>
+
+              <div class="field">
+                <label for="time">4 · Time selection</label>
+                <div class="select-3d"><select id="time" name="time" required data-slot-select disabled>
+                  <option value="">Choose service, stylist &amp; date first</option>
+                </select></div>
+                <div class="slot-panel">
+                  <div class="slot-legend">
+                    <span><i class="lg-available"></i>Available</span><span><i class="lg-booked"></i>Booked</span>
+                    <span><i class="lg-blocked"></i>Unavailable</span><span><i class="lg-selected"></i>Your pick</span>
+                  </div>
+                  <div class="slot-grid" data-slot-grid aria-live="polite"><div class="slot-msg">Choose a service, stylist and date to see open times.</div></div>
+                  <div class="slot-status" data-slot-status></div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="notes">Notes for your stylist (optional)</label>
+                <textarea id="notes" name="notes" maxlength="300" placeholder="Allergies, inspiration photos, preferences…"></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Book this time</button>
+              <span class="field-hint">Once you book, the slot turns to <b>Booked</b> for everyone instantly.</span>
+            </div>
+
+            <div class="card inset" style="margin-bottom:0;">
+              <h3 style="margin-bottom:10px;">Good to know</h3>
+              <p style="font-size:.88rem;">Open Tuesday–Sunday, {{ SALON_OPEN|t12 }}–{{ SALON_CLOSE|t12 }}. Times already taken are locked, and longer services need enough free time in a row. Please arrive 5 minutes early. Cancel anytime from your Upcoming tab.</p>
+              <p style="font-size:.82rem; margin:0;">Pick a time and the chip lifts into gold — then confirm with <b>Book this time</b>.</p>
+            </div>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-upcoming">
+      <div class="card">
+        <div class="card-head"><h3>Upcoming appointments</h3></div>
+        {% if upcoming|length == 0 %}
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4.5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9.5H21M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <p>No upcoming appointments yet. Book your next visit above.</p>
+          </div>
+        {% else %}
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Service</th><th>Stylist</th><th>Date &amp; Time</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {% for a in upcoming %}
+                <tr>
+                  <td class="cell-name">{{ a.service_name }}<div class="cell-sub">${{ "%.0f"|format(a.service_price) }} · {{ a.duration }} min</div></td>
+                  <td>{{ a.stylist_name }}</td>
+                  <td>{{ a.date }} at {{ a.time }}</td>
+                  <td><span class="pill pill-{{ a.status|lower }}">{{ a.status }}</span></td>
+                  <td class="row-actions">
+                    <form method="POST" action="{{ url_for('cancel_appointment', appt_id=a.id) }}" onsubmit="return confirm('Cancel this appointment?');">{{ csrf_field() }}
+                      <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-history">
+      <div class="card">
+        <div class="card-head"><h3>Past appointments</h3></div>
+        {% if history|length == 0 %}
+          <div class="empty-state"><p>Your appointment history will appear here.</p></div>
+        {% else %}
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Service</th><th>Stylist</th><th>Date &amp; Time</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for a in history %}
+                <tr>
+                  <td class="cell-name">{{ a.service_name }}</td>
+                  <td>{{ a.stylist_name }}</td>
+                  <td>{{ a.date }} at {{ a.time }}</td>
+                  <td><span class="pill pill-{{ a.status|lower }}">{{ a.status }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

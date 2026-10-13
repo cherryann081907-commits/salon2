@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Services — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'services' %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Services</span>
+        <h2>Manage your menu</h2>
+        <p>Add new treatments, adjust pricing, or retire services clients can no longer book.</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleCollapse('add-service-form')">+ Add service</button>
+    </div>
+
+    <div class="card collapsible" id="add-service-form">
+      <div class="card-head"><h3>New service</h3></div>
+      <form method="POST" action="{{ url_for('admin_services') }}" novalidate>{{ csrf_field() }}
+        <div class="field-row">
+          <div class="field">
+            <label for="name">Service name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Balayage Color" required>
+          </div>
+          <div class="field">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+              <option>Hair</option><option>Color</option><option>Styling</option><option>Nails</option><option>General</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="price">Price ($)</label>
+            <input type="number" id="price" name="price" min="1" step="0.01" placeholder="65" required>
+          </div>
+          <div class="field">
+            <label for="duration">Duration (minutes)</label>
+            <input type="number" id="duration" name="duration" min="5" step="5" placeholder="45" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" placeholder="A short client-facing description"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Save service</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="svcSearch" placeholder="Search services…" onkeyup="filterTable('svcSearch','svcTable')">
+      </div>
+      {% if services|length == 0 %}
+        <div class="empty-state"><p>No services yet — add your first one above.</p></div>
+      {% else %}
+      <div class="table-wrap">
+        <table id="svcTable">
+          <thead><tr><th>Service</th><th>Category</th><th>Price</th><th>Duration</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for s in services %}
+            <tr>
+              <td class="cell-name">{{ s.name }}<div class="cell-sub">{{ s.description }}</div></td>
+              <td>{{ s.category }}</td>
+              <td>${{ "%.0f"|format(s.price) }}</td>
+              <td>{{ s.duration }} min</td>
+              <td><span class="pill {{ 'pill-completed' if s.active else 'pill-cancelled' }}">{{ 'Active' if s.active else 'Hidden' }}</span></td>
+              <td class="row-actions">
+                <button type="button" class="btn btn-ghost btn-sm" data-open-dialog="svc-dialog" data-action="{{ url_for('admin_edit_service', service_id=s.id) }}" data-json='{{ s.to_dict()|tojson|forceescape }}'>Edit</button>
+                <form method="POST" action="{{ url_for('admin_toggle_service', service_id=s.id) }}">{{ csrf_field() }}
+                  <button type="submit" class="btn btn-ghost btn-sm">{{ 'Hide' if s.active else 'Show' }}</button>
+                </form>
+                <form method="POST" action="{{ url_for('admin_delete_service', service_id=s.id) }}" onsubmit="return confirm('Delete this service?');">{{ csrf_field() }}
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+<dialog class="modal" id="svc-dialog">
+  <form method="POST" action="" class="modal-body" novalidate>{{ csrf_field() }}
+    <h3>Edit service</h3>
+    <div class="field-row">
+      <div class="field"><label>Service name</label><input type="text" name="name" required maxlength="60"></div>
+      <div class="field"><label>Category</label><div class="select-3d"><select name="category"><option>Hair</option><option>Color</option><option>Styling</option><option>Nails</option><option>General</option></select></div></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Price ($)</label><input type="number" name="price" min="1" step="0.01" required></div>
+      <div class="field"><label>Duration (min)</label><input type="number" name="duration" min="5" step="5" required></div>
+    </div>
+    <div class="field"><label>Description</label><textarea name="description" maxlength="200"></textarea></div>
+    <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close>Cancel</button><button type="submit" class="btn btn-primary">Save changes</button></div>
+  </form>
+</dialog>
+{% endblock %}

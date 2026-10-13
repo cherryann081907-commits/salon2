@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Create account — Lumora Salon{% endblock %}
+{% block nav %}{% include "partials/topnav.html" %}{% endblock %}
+
+{% block body %}
+<div class="auth-shell">
+  <div class="auth-visual">
+    <div>
+      <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="19" stroke="#AD8A4E" stroke-width="1.4"/>
+        <path d="M13 12L27 28M27 12L13 28" stroke="#F8F4EC" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <h2>Booking made effortless.</h2>
+      <p>Create your client profile once, then book any stylist and service in a couple of taps — no phone calls, no waiting.</p>
+    </div>
+    <p style="font-size:0.78rem; opacity:0.6;">&copy; {{ current_year }} Lumora Salon</p>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-card">
+      <span class="kicker">Join Lumora</span>
+      <h2>Create your client account</h2>
+      <p style="margin-bottom:28px;">It takes less than a minute.</p>
+
+      <form method="POST" action="{{ url_for('register') }}" novalidate data-pw-form>{{ csrf_field() }}
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" value="{{ form.get('name','') }}" placeholder="Jane Doe" required autofocus>
+        </div>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" value="{{ form.get('email','') }}" placeholder="you@example.com" required>
+        </div>
+        <div class="field">
+          <label for="phone">Phone number</label>
+          <input type="tel" id="phone" name="phone" value="{{ form.get('phone','') }}" placeholder="555-0123">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="8+ chars, letter &amp; number" required minlength="8" data-meter="pwm">
+          </div>
+          <div class="field">
+            <label for="confirm_password">Confirm password</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Repeat password" required minlength="8">
+          </div>
+        </div>
+        <div class="pw-meter" id="pwm"><span></span></div><div class="pw-hint" style="margin-bottom:16px;"></div>
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
