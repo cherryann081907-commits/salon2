@@ -1095,6 +1095,116 @@ def toggle_availability():
     return redirect(url_for("stylist_dashboard"))
 
 
+def render_stylist_workspace(page, **extra):
+    user = current_user()
+    own_appts = [enrich_appointment(a) for a in appointments.for_stylist(user.id)]
+    completed_transactions = [a for a in own_appts if a["status"] == "Completed"]
+    return render_template(
+        "stylist_workspace.html", page=page, user=user,
+        clients=sorted(users.by_role("customer"), key=lambda c: c.name.lower()),
+        active_clients=[c for c in users.by_role("customer") if c.active],
+        own_appts=own_appts, salon_services=services.all(),
+        active_services=services.active_services(),
+        completed_transactions=completed_transactions,
+        statuses=Appointment.STATUSES, today=date.today().isoformat(),
+        max_day=(date.today() + timedelta(days=MAX_ADVANCE_DAYS)).isoformat(), **extra,
+    )
+
+
+@app.route("/stylist/records")
+@role_required("stylist")
+def stylist_records():
+    return render_stylist_workspace("records")
+
+
+@app.route("/stylist/add", methods=["GET", "POST"])
+@role_required("stylist")
+def stylist_add_information():
+    if request.method == "POST":
+        user = current_user()
+        form = request.form
+        if form.get("action") == "client":
+            name = form.get("name", "").strip()
+            email = form.get("email", "").strip().lower()
+            phone = form.get("phone", "").strip()
+            password = form.get("password", "")
+            errors = profile_errors(name, email, phone) + password_errors(password)
+            with booking_lock:
+                if email and users.find_by_email(email):
+                    errors.append("An account with this email already exists.")
+                if not errors:
+                    try:
+                        users.add(Customer(name, email, password, phone))
+                    except ValueError as exc:
+                        errors.append(str(exc))
+            if errors:
+                for error in errors:
+                    flash(error, "error")
+            else:
+                flash("Client added successfully.", "success")
+        elif form.get("action") == "appointment":
+            with booking_lock:
+                errors, customer, stylist, service = validate_booking(
+                    form.get("customer_id"), user.id, form.get("service_id"),
+                    form.get("date"), form.get("time"))
+                if customer and not customer.active:
+                    errors.append("Choose an active client.")
+                if not errors:
+                    appointments.add(Appointment(
+                        customer.id, stylist.id, service.id, form.get("date"),
+                        form.get("time"), form.get("notes", "").strip()[:300]))
+            if errors:
+                for error in errors:
+                    flash(error, "error")
+            else:
+                flash("Appointment created successfully.", "success")
+        else:
+            flash("Choose an information type to add.", "error")
+        return redirect(url_for("stylist_add_information"))
+
+    return render_stylist_workspace("add")
+
+
+@app.route("/stylist/updates")
+@role_required("stylist")
+def stylist_updates():
+    return render_stylist_workspace("updates")
+
+
+@app.route("/stylist/search")
+@role_required("stylist")
+def stylist_search():
+    query = request.args.get("q", "").strip()
+    needle = query.casefold()
+    client_matches = []
+    appointment_matches = []
+    transaction_matches = []
+    if needle:
+        client_matches = [c for c in users.by_role("customer")
+                          if needle in " ".join((c.name, c.email, c.phone)).casefold()]
+        own_appts = [enrich_appointment(a) for a in appointments.for_stylist(current_user().id)]
+        for appt in own_appts:
+            customer = users.get(appt["customer_id"])
+            fields = (appt["date"], appt["time"], appt["service_name"],
+                      appt["customer_name"], str(appt["id"]),
+                      customer.email if customer else "", customer.phone if customer else "")
+            if any(needle in str(value).casefold() for value in fields):
+                appointment_matches.append(appt)
+                if appt["status"] == "Completed":
+                    transaction_matches.append(appt)
+    return render_stylist_workspace(
+        "search", query=query, client_matches=client_matches,
+        appointment_matches=appointment_matches,
+        transaction_matches=transaction_matches,
+    )
+
+
+@app.route("/stylist/process")
+@role_required("stylist")
+def stylist_process():
+    return render_stylist_workspace("process")
+
+
 # =========================================================
 #  SCHEDULE BOARD + TIME OFF (admin: everyone, stylist: self)
 # =========================================================
@@ -1682,4 +1792,4 @@ def server_error(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", "5001")))

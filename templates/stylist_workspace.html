@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}{{ {'records': 'View Records', 'add': 'Add Information', 'updates': 'Update Information', 'search': 'Search Records', 'process': 'Process Transactions/Requests'}[page] }} — Lumora Salon{% endblock %}
+{% block nav %}{% endblock %}
+{% set active_page = 'stylist_' ~ page %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-panel">
+    <div class="panel-head">
+      <div>
+        <span class="eyebrow">Stylist Workspace</span>
+        <h2>{{ {'records': 'Salon records', 'add': 'Add information', 'updates': 'Update appointments', 'search': 'Search records', 'process': 'Requests and charges'}[page] }}</h2>
+        <p>{{ {'records': 'View client, appointment, service, and completed-service charge records.', 'add': 'Register a client or book an appointment on your own schedule.', 'updates': 'Update the status of appointments assigned to you.', 'search': 'Find clients and your appointments by name, date, service, or record number.', 'process': 'Process your appointment requests and review completed-service charges.'}[page] }}</p>
+      </div>
+    </div>
+
+    {% if page == 'records' %}
+      <section class="card">
+        <div class="card-head"><h3>Client records</h3><span class="cell-sub">View only</span></div>
+        {% if clients %}
+        <div class="table-wrap"><table>
+          <thead><tr><th>Client</th><th>Email</th><th>Phone</th><th>Account</th></tr></thead>
+          <tbody>{% for client in clients %}
+            <tr><td class="cell-name">{{ client.name }}</td><td>{{ client.email }}</td><td>{{ client.phone or '—' }}</td><td><span class="pill {{ 'pill-available' if client.active else 'pill-neutral' }}">{{ 'Active' if client.active else 'Deactivated' }}</span></td></tr>
+          {% endfor %}</tbody>
+        </table></div>
+        {% else %}<div class="empty-state"><p>No client records found.</p></div>{% endif %}
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h3>My appointment records</h3><span class="cell-sub">Assigned to you</span></div>
+        {% if own_appts %}
+        <div class="table-wrap"><table>
+          <thead><tr><th>Client</th><th>Contact</th><th>Date &amp; time</th><th>Service</th><th>Price</th><th>Status</th></tr></thead>
+          <tbody>{% for appt in own_appts %}{% set client = clients|selectattr('id', 'equalto', appt.customer_id)|first %}
+            <tr><td class="cell-name">{{ appt.customer_name }}</td><td>{{ client.email if client else '—' }}<div class="cell-sub">{{ client.phone if client and client.phone else '—' }}</div></td><td>{{ appt.date }} · {{ appt.time }}</td><td>{{ appt.service_name }}</td><td>₱{{ '%.2f'|format(appt.service_price) }}</td><td><span class="pill pill-{{ appt.status|lower }}">{{ appt.status }}</span></td></tr>
+          {% endfor %}</tbody>
+        </table></div>
+        {% else %}<div class="empty-state"><p>You have no appointment records yet.</p></div>{% endif %}
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h3>Salon services</h3><span class="cell-sub">View only</span></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Service</th><th>Category</th><th>Duration</th><th>Price</th><th>Status</th></tr></thead>
+          <tbody>{% for service in salon_services %}
+            <tr><td class="cell-name">{{ service.name }}</td><td>{{ service.category }}</td><td>{{ service.duration }} min</td><td>₱{{ '%.2f'|format(service.price) }}</td><td><span class="pill {{ 'pill-available' if service.active else 'pill-neutral' }}">{{ 'Active' if service.active else 'Hidden' }}</span></td></tr>
+          {% else %}<tr><td colspan="5">No service records found.</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h3>Completed service charges</h3><span class="cell-sub">Read only</span></div>
+        <p class="field-hint">Payment records are not part of this system. Amounts below are the listed prices of your completed appointments, not proof of payment.</p>
+        {% if completed_transactions %}
+        <div class="table-wrap"><table>
+          <thead><tr><th>Record</th><th>Client</th><th>Date</th><th>Service</th><th>Listed charge</th><th>Status</th></tr></thead>
+          <tbody>{% for appt in completed_transactions %}
+            <tr><td>Appointment #{{ appt.id }}</td><td>{{ appt.customer_name }}</td><td>{{ appt.date }}</td><td>{{ appt.service_name }}</td><td>₱{{ '%.2f'|format(appt.service_price) }}</td><td><span class="pill pill-completed">Completed</span></td></tr>
+          {% endfor %}</tbody>
+        </table></div>
+        {% else %}<div class="empty-state"><p>No completed service charges to show.</p></div>{% endif %}
+      </section>
+
+    {% elif page == 'add' %}
+      <section class="card">
+        <div class="card-head"><h3>New client</h3></div>
+        <form method="POST" action="{{ url_for('stylist_add_information') }}" autocomplete="off">
+          {{ csrf_field() }}<input type="hidden" name="action" value="client">
+          <div class="field-row">
+            <div class="field"><label for="staff_client_name">Full name</label><input type="text" id="staff_client_name" name="name" required maxlength="60"></div>
+            <div class="field"><label for="staff_client_email">Email</label><input type="email" id="staff_client_email" name="email" required></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="staff_client_phone">Phone</label><input type="tel" id="staff_client_phone" name="phone"></div>
+            <div class="field"><label for="staff_client_password">Temporary password</label><input type="password" id="staff_client_password" name="password" required minlength="8" autocomplete="new-password"><span class="field-hint">At least 8 characters with a letter and a number.</span></div>
+          </div>
+          <button type="submit" class="btn btn-primary">Add client</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h3>New appointment</h3><span class="cell-sub">This stylist's schedule</span></div>
+        <form method="POST" action="{{ url_for('stylist_add_information') }}">
+          {{ csrf_field() }}<input type="hidden" name="action" value="appointment">
+          <div class="field-row">
+            <div class="field"><label for="staff_booking_client">Client</label><select id="staff_booking_client" name="customer_id" required><option value="">Choose a client</option>{% for client in active_clients %}<option value="{{ client.id }}">{{ client.name }} · {{ client.email }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="staff_booking_service">Service</label><select id="staff_booking_service" name="service_id" required><option value="">Choose a service</option>{% for service in active_services %}<option value="{{ service.id }}">{{ service.name }} · ₱{{ '%.2f'|format(service.price) }} · {{ service.duration }} min</option>{% endfor %}</select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="staff_booking_date">Date</label><input type="date" id="staff_booking_date" name="date" min="{{ today }}" max="{{ max_day }}" required></div>
+            <div class="field"><label for="staff_booking_time">Start time</label><input type="time" id="staff_booking_time" name="time" step="1800" required></div>
+          </div>
+          <div class="field"><label for="staff_booking_notes">Appointment notes</label><textarea id="staff_booking_notes" name="notes" maxlength="300" rows="3"></textarea></div>
+          {% if not active_clients %}<p class="field-hint">Add an active client before booking.</p>{% endif %}
+          {% if not active_services %}<p class="field-hint">There are no active services available to book.</p>{% endif %}
+          <button type="submit" class="btn btn-primary" {{ 'disabled' if not active_clients or not active_services }}>Create appointment</button>
+        </form>
+      </section>
+
+    {% elif page == 'updates' %}
+      <section class="card">
+        <div class="card-head"><h3>Appointments assigned to me</h3><span class="cell-sub">Status only; client and service details are locked</span></div>
+        {% if own_appts %}
+        <div class="table-wrap"><table>
+          <thead><tr><th>Client</th><th>Date &amp; time</th><th>Service</th><th>Price</th><th>Current status</th><th>Update status</th></tr></thead>
+          <tbody>{% for appt in own_appts %}
+            <tr><td class="cell-name">{{ appt.customer_name }}</td><td>{{ appt.date }} · {{ appt.time }}</td><td>{{ appt.service_name }}</td><td>₱{{ '%.2f'|format(appt.service_price) }}</td><td><span class="pill pill-{{ appt.status|lower }}">{{ appt.status }}</span></td><td>
+              <form method="POST" action="{{ url_for('update_appointment_status', appt_id=appt.id) }}" class="row-actions">{{ csrf_field() }}
+                <select name="status" aria-label="Status for appointment {{ appt.id }}">{% for status in statuses %}<option value="{{ status }}" {{ 'selected' if appt.status == status }}>{{ status }}</option>{% endfor %}</select>
+                <button type="submit" class="btn btn-ghost btn-sm">Save</button>
+              </form>
+            </td></tr>
+          {% endfor %}</tbody>
+        </table></div>
+        {% else %}<div class="empty-state"><p>There are no appointments to update.</p></div>{% endif %}
+      </section>
+
+    {% elif page == 'search' %}
+      <section class="card">
+        <form method="GET" action="{{ url_for('stylist_search') }}" class="filter-bar">
+          <input type="search" name="q" value="{{ query }}" placeholder="Client, date, service, or appointment number" aria-label="Search client and appointment records">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+        {% if query and not client_matches and not appointment_matches %}
+          <div class="empty-state"><p>No records matched “{{ query }}”. Try a client name, date, service, or appointment number.</p></div>
+        {% elif not query %}
+          <div class="empty-state"><p>Enter a client name, date, service, or appointment number to search.</p></div>
+        {% endif %}
+      </section>
+      {% if client_matches %}
+      <section class="card"><div class="card-head"><h3>Matching clients</h3></div>
+        <div class="table-wrap"><table><thead><tr><th>Client</th><th>Email</th><th>Phone</th><th>Account</th></tr></thead><tbody>{% for client in client_matches %}
+          <tr><td class="cell-name">{{ client.name }}</td><td>{{ client.email }}</td><td>{{ client.phone or '—' }}</td><td>{{ 'Active' if client.active else 'Deactivated' }}</td></tr>
+        {% endfor %}</tbody></table></div>
+      </section>
+      {% endif %}
+      {% if appointment_matches %}
+      <section class="card"><div class="card-head"><h3>Matching appointments</h3></div>
+        <div class="table-wrap"><table><thead><tr><th>Record</th><th>Client</th><th>Date &amp; time</th><th>Service</th><th>Price</th><th>Status</th></tr></thead><tbody>{% for appt in appointment_matches %}
+          <tr><td>Appointment #{{ appt.id }}</td><td>{{ appt.customer_name }}</td><td>{{ appt.date }} · {{ appt.time }}</td><td>{{ appt.service_name }}</td><td>₱{{ '%.2f'|format(appt.service_price) }}</td><td><span class="pill pill-{{ appt.status|lower }}">{{ appt.status }}</span></td></tr>
+        {% endfor %}</tbody></table></div>
+      </section>
+      {% endif %}
+      {% if transaction_matches %}
+      <section class="card"><div class="card-head"><h3>Matching completed-service charges</h3></div>
+        <div class="table-wrap"><table><thead><tr><th>Appointment</th><th>Client</th><th>Date</th><th>Service</th><th>Listed charge</th></tr></thead><tbody>{% for appt in transaction_matches %}
+          <tr><td>#{{ appt.id }}</td><td>{{ appt.customer_name }}</td><td>{{ appt.date }}</td><td>{{ appt.service_name }}</td><td>₱{{ '%.2f'|format(appt.service_price) }}</td></tr>
+        {% endfor %}</tbody></table></div>
+      </section>
+      {% endif %}
+
+    {% elif page == 'process' %}
+      <section class="card">
+        <div class="card-head"><h3>Pending and confirmed requests</h3><span class="cell-sub">Only your appointments can be changed</span></div>
+        {% set requests = own_appts|selectattr('status', 'in', ['Pending', 'Confirmed'])|list %}
+        {% if requests %}
+        <div class="table-wrap"><table><thead><tr><th>Client</th><th>Date &amp; time</th><th>Service</th><th>Request status</th><th>Process</th></tr></thead><tbody>{% for appt in requests %}
+          <tr><td class="cell-name">{{ appt.customer_name }}</td><td>{{ appt.date }} · {{ appt.time }}</td><td>{{ appt.service_name }}</td><td><span class="pill pill-{{ appt.status|lower }}">{{ appt.status }}</span></td><td>
+            <form method="POST" action="{{ url_for('update_appointment_status', appt_id=appt.id) }}" class="row-actions">{{ csrf_field() }}
+              <select name="status" aria-label="Process appointment {{ appt.id }}">{% for status in statuses %}<option value="{{ status }}" {{ 'selected' if appt.status == status }}>{{ status }}</option>{% endfor %}</select>
+              <button type="submit" class="btn btn-ghost btn-sm">Apply</button>
+            </form>
+          </td></tr>
+        {% endfor %}</tbody></table></div>
+        {% else %}<div class="empty-state"><p>You have no pending appointment requests.</p></div>{% endif %}
+      </section>
+      <section class="card">
+        <div class="card-head"><h3>Completed service charges</h3><span class="cell-sub">Read only</span></div>
+        <p class="field-hint">The system has no payment ledger or transaction reference. These are completed appointments and their listed service prices, not payment receipts.</p>
+        {% if completed_transactions %}
+        <div class="table-wrap"><table><thead><tr><th>Appointment</th><th>Client</th><th>Date</th><th>Service</th><th>Listed charge</th></tr></thead><tbody>{% for appt in completed_transactions %}
+          <tr><td>#{{ appt.id }}</td><td>{{ appt.customer_name }}</td><td>{{ appt.date }}</td><td>{{ appt.service_name }}</td><td>₱{{ '%.2f'|format(appt.service_price) }}</td></tr>
+        {% endfor %}</tbody></table></div>
+        {% else %}<div class="empty-state"><p>No completed service charges to review.</p></div>{% endif %}
+      </section>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

@@ -10,7 +10,7 @@ python3 -m pip install flask
 python3 app.py
 ```
 
-Then open **http://localhost:5000**
+Then open **http://localhost:5001**. Set the `PORT` environment variable to use a different port.
 
 > Note: data resets whenever the app restarts, since everything lives in memory (as required — no database).
 

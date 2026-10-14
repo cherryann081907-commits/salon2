@@ -126,7 +126,13 @@ function setupPasswordHelpers() {
   document.querySelectorAll('.pw-toggle').forEach(btn => btn.addEventListener('click', () => {
     const input = btn.parentElement.querySelector('input');
     input.type = input.type === 'password' ? 'text' : 'password';
-    btn.textContent = input.type === 'password' ? 'Show' : 'Hide';
+    if (btn.hasAttribute('data-icon-toggle')) {
+      const visible = input.type !== 'password';
+      btn.setAttribute('aria-pressed', String(visible));
+      btn.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+    } else {
+      btn.textContent = input.type === 'password' ? 'Show' : 'Hide';
+    }
   }));
   document.querySelectorAll('input[data-meter]').forEach(input => {
     const meter = document.getElementById(input.dataset.meter);
