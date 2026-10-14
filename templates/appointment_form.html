@@ -39,7 +39,7 @@
             <label for="service_id">Service</label>
             <div class="select-3d"><select id="service_id" name="service_id" required>
               <option value="">Choose a service…</option>
-              {% for s in services %}<option value="{{ s.id }}" {{ 'selected' if sel_service == s.id|string }}>{{ s.name }} — {{ s.duration }} min · ${{ "%.0f"|format(s.price) }}</option>{% endfor %}
+              {% for s in services %}<option value="{{ s.id }}" {{ 'selected' if sel_service == s.id|string }}>{{ s.name }} — {{ s.duration }} min · ₱{{ "%.0f"|format(s.price) }}</option>{% endfor %}
             </select></div>
           </div>
         </div>

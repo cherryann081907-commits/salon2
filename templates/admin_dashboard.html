@@ -21,7 +21,7 @@
     </div>
 
     <div class="stat-grid">
-      <div class="stat-tile accent"><div class="num">${{ "%.0f"|format(stats.revenue) }}</div><div class="label">Revenue from completed visits</div></div>
+      <div class="stat-tile accent"><div class="num">₱{{ "%.0f"|format(stats.revenue) }}</div><div class="label">Revenue from completed visits</div></div>
       <div class="stat-tile"><div class="num"><span data-count="{{ stats.total_appointments }}">0</span></div><div class="label">Total appointments</div></div>
       <div class="stat-tile"><div class="num"><span data-count="{{ stats.pending }}">0</span></div><div class="label">Pending requests</div></div>
       <div class="stat-tile"><div class="num"><span data-count="{{ stats.total_customers }}">0</span></div><div class="label">Registered clients</div></div>

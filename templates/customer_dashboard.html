@@ -39,7 +39,7 @@
                 <div class="select-3d"><select id="service_id" name="service_id" required>
                   <option value="">Choose a service…</option>
                   {% for s in services %}
-                    <option value="{{ s.id }}">{{ s.name }} — ${{ "%.0f"|format(s.price) }} ({{ s.duration }} min)</option>
+                    <option value="{{ s.id }}">{{ s.name }} — ₱{{ "%.0f"|format(s.price) }} ({{ s.duration }} min)</option>
                   {% endfor %}
                 </select></div>
               </div>
@@ -110,7 +110,7 @@
               <tbody>
                 {% for a in upcoming %}
                 <tr>
-                  <td class="cell-name">{{ a.service_name }}<div class="cell-sub">${{ "%.0f"|format(a.service_price) }} · {{ a.duration }} min</div></td>
+                  <td class="cell-name">{{ a.service_name }}<div class="cell-sub">₱{{ "%.0f"|format(a.service_price) }} · {{ a.duration }} min</div></td>
                   <td>{{ a.stylist_name }}</td>
                   <td>{{ a.date }} at {{ a.time }}</td>
                   <td><span class="pill pill-{{ a.status|lower }}">{{ a.status }}</span></td>

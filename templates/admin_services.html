@@ -34,7 +34,7 @@
         </div>
         <div class="field-row">
           <div class="field">
-            <label for="price">Price ($)</label>
+            <label for="price">Price (₱)</label>
             <input type="number" id="price" name="price" min="1" step="0.01" placeholder="65" required>
           </div>
           <div class="field">
@@ -65,7 +65,7 @@
             <tr>
               <td class="cell-name">{{ s.name }}<div class="cell-sub">{{ s.description }}</div></td>
               <td>{{ s.category }}</td>
-              <td>${{ "%.0f"|format(s.price) }}</td>
+              <td>₱{{ "%.0f"|format(s.price) }}</td>
               <td>{{ s.duration }} min</td>
               <td><span class="pill {{ 'pill-completed' if s.active else 'pill-cancelled' }}">{{ 'Active' if s.active else 'Hidden' }}</span></td>
               <td class="row-actions">
@@ -94,7 +94,7 @@
       <div class="field"><label>Category</label><div class="select-3d"><select name="category"><option>Hair</option><option>Color</option><option>Styling</option><option>Nails</option><option>General</option></select></div></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Price ($)</label><input type="number" name="price" min="1" step="0.01" required></div>
+      <div class="field"><label>Price (₱)</label><input type="number" name="price" min="1" step="0.01" required></div>
       <div class="field"><label>Duration (min)</label><input type="number" name="duration" min="5" step="5" required></div>
     </div>
     <div class="field"><label>Description</label><textarea name="description" maxlength="200"></textarea></div>

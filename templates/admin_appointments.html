@@ -40,7 +40,7 @@
             <tr data-status="{{ a.status }}">
               <td class="cell-name">{{ a.customer_name }}</td>
               <td>{{ a.stylist_name }}</td>
-              <td>{{ a.service_name }}<div class="cell-sub">${{ "%.0f"|format(a.service_price) }} · {{ a.duration }} min</div></td>
+              <td>{{ a.service_name }}<div class="cell-sub">₱{{ "%.0f"|format(a.service_price) }} · {{ a.duration }} min</div></td>
               <td>{{ a.date|dlabel }}<div class="cell-sub">{{ a.time|t12 }} – {{ a.end|t12 }}</div></td>
               <td>
                 <form method="POST" action="{{ url_for('admin_update_status', appt_id=a.id) }}">{{ csrf_field() }}

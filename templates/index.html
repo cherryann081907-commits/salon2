@@ -76,7 +76,7 @@
           <h3>{{ s.name }}</h3>
           <p>{{ s.description }}</p>
           <div class="svc-meta">
-            <span class="svc-price">${{ "%.0f"|format(s.price) }}</span>
+            <span class="svc-price">₱{{ "%.0f"|format(s.price) }}</span>
             <span class="svc-duration">{{ s.duration }} min</span>
           </div>
         </div>
